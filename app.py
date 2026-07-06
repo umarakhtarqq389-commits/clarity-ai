@@ -100,7 +100,12 @@ def parse_json_response(content: str) -> dict:
         content = content.split("\n", 1)[1] if "\n" in content else content
         if content.lower().startswith("json"):
             content = content[4:]
-    return json.loads(content)
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        from json_repair import repair_json
+
+        return json.loads(repair_json(content))
 
 
 def analyze_document(text: str) -> dict:
