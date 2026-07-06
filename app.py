@@ -56,10 +56,22 @@ def verdict_for_score(score: int):
     return VERDICTS[-1][1], VERDICTS[-1][2], VERDICTS[-1][3]
 
 
-def material_icon(name: str, color: str = "inherit", size: int = 20) -> str:
+ICON_PATHS = {
+    "description": '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line>',
+    "check_circle": '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>',
+    "warning": '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>',
+    "construction": '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z"></path>',
+    "report": '<polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>',
+    "forum": '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>',
+}
+
+
+def material_icon(name: str, color: str = "currentColor", size: int = 20) -> str:
+    inner = ICON_PATHS.get(name, "")
     return (
-        f'<span class="material-symbols-outlined" '
-        f'style="font-size:{size}px; color:{color}; vertical-align:middle;">{name}</span>'
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 24 24" '
+        f'fill="none" stroke="{color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" '
+        f'style="vertical-align:middle;">{inner}</svg>'
     )
 
 
@@ -183,16 +195,7 @@ def risk_color(level: str) -> str:
 
 st.set_page_config(page_title="ClarityAI", page_icon=":material/description:", layout="centered")
 
-st.markdown(
-    '<link rel="stylesheet" '
-    'href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />',
-    unsafe_allow_html=True,
-)
-
-st.markdown(
-    f'<h1>{material_icon("description", size=34)} ClarityAI</h1>',
-    unsafe_allow_html=True,
-)
+st.markdown(f'<h1>{material_icon("description", size=34)} ClarityAI</h1>', unsafe_allow_html=True)
 st.caption("Paste a contract, ToS, lease, or offer letter — get a plain-language risk breakdown, powered by Gemma on Fireworks AI.")
 
 if LLM_PROVIDER == "huggingface" and not HF_TOKEN:
@@ -227,13 +230,13 @@ elif analyze_clicked:
         score = result.get("overall_risk_score", 0)
         label, verdict_icon, verdict_color = verdict_for_score(score)
 
-        st.markdown(
-            f"""<div style="border: 2px solid {verdict_color}; border-radius: 8px; padding: 14px 18px; margin-bottom: 16px; text-align: center;">
-            {material_icon(verdict_icon, color=verdict_color, size=28)}
-            <span style="font-size: 1.3em; font-weight: 700; color: {verdict_color};"> {label}</span>
-            </div>""",
-            unsafe_allow_html=True,
+        icon_html = material_icon(verdict_icon, color=verdict_color, size=28)
+        banner_html = (
+            f'<div style="border: 2px solid {verdict_color}; border-radius: 8px; padding: 14px 18px; margin-bottom: 16px; text-align: center;">'
+            f'{icon_html} <span style="font-size: 1.3em; font-weight: 700; color: {verdict_color};">{label}</span>'
+            f'</div>'
         )
+        st.markdown(banner_html, unsafe_allow_html=True)
 
         st.subheader("Overall risk")
         st.progress(min(max(score, 0), 100) / 100)
@@ -248,20 +251,19 @@ elif analyze_clicked:
             color = risk_color(level)
             tip = clause.get("negotiation_tip", "")
             tip_html = (
-                f'<br/>{material_icon("forum", color=color, size=16)} '
-                f'<b>Ask for:</b> {tip}'
+                f'<br/>{material_icon("forum", color=color, size=16)} <b>Ask for:</b> {tip}'
                 if tip
                 else ""
             )
-            st.markdown(
-                f"""<div style="border-left: 4px solid {color}; padding: 8px 12px; margin-bottom: 10px; background: rgba(128,128,128,0.06);">
-                <b style="color:{color}; text-transform:uppercase;">{level}</b><br/>
-                <i>{clause.get('excerpt', '')}</i><br/>
-                {clause.get('explanation', '')}
-                {tip_html}
-                </div>""",
-                unsafe_allow_html=True,
+            clause_html = (
+                f'<div style="border-left: 4px solid {color}; padding: 8px 12px; margin-bottom: 10px; background: rgba(128,128,128,0.06);">'
+                f'<b style="color:{color}; text-transform:uppercase;">{level}</b><br/>'
+                f'<i>{clause.get("excerpt", "")}</i><br/>'
+                f'{clause.get("explanation", "")}'
+                f'{tip_html}'
+                f'</div>'
             )
+            st.markdown(clause_html, unsafe_allow_html=True)
 
         st.download_button(
             "Download full Risk Report (PDF)",
