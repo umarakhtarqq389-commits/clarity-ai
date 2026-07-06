@@ -41,23 +41,30 @@ Include 3-8 of the most important clauses, prioritizing anything risky, unusual,
 If the document is genuinely low-risk and standard, say so honestly and keep the clause list short."""
 
 VERDICTS = [
-    (20, "✅ Looks Standard", "#2e7d32"),
-    (50, "⚠️ Read Carefully", "#e6a700"),
-    (75, "🚧 Negotiate Before Signing", "#e65100"),
-    (101, "🚩 Proceed With Caution", "#c62828"),
+    (20, "Looks Standard", "check_circle", "#2e7d32"),
+    (50, "Read Carefully", "warning", "#e6a700"),
+    (75, "Negotiate Before Signing", "construction", "#e65100"),
+    (101, "Proceed With Caution", "report", "#c62828"),
 ]
 
 
 def verdict_for_score(score: int):
-    for threshold, label, color in VERDICTS:
+    for threshold, label, icon, color in VERDICTS:
         if score < threshold:
-            return label, color
-    return VERDICTS[-1][1], VERDICTS[-1][2]
+            return label, icon, color
+    return VERDICTS[-1][1], VERDICTS[-1][2], VERDICTS[-1][3]
+
+
+def material_icon(name: str, color: str = "inherit", size: int = 20) -> str:
+    return (
+        f'<span class="material-symbols-outlined" '
+        f'style="font-size:{size}px; color:{color}; vertical-align:middle;">{name}</span>'
+    )
 
 
 def build_report_markdown(result: dict) -> str:
     score = result.get("overall_risk_score", 0)
-    label, _ = verdict_for_score(score)
+    label, _, _ = verdict_for_score(score)
     lines = [
         "# ClarityAI Risk Report",
         f"**Verdict:** {label}  ",
@@ -125,9 +132,18 @@ def risk_color(level: str) -> str:
     return {"low": "#2e7d32", "medium": "#e6a700", "high": "#c62828"}.get(level.lower(), "#888")
 
 
-st.set_page_config(page_title="ClarityAI", page_icon="📄", layout="centered")
+st.set_page_config(page_title="ClarityAI", page_icon=":material/description:", layout="centered")
 
-st.title("📄 ClarityAI")
+st.markdown(
+    '<link rel="stylesheet" '
+    'href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />',
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    f'<h1>{material_icon("description", size=34)} ClarityAI</h1>',
+    unsafe_allow_html=True,
+)
 st.caption("Paste a contract, ToS, lease, or offer letter — get a plain-language risk breakdown, powered by Gemma on Fireworks AI.")
 
 if LLM_PROVIDER == "huggingface" and not HF_TOKEN:
@@ -146,9 +162,11 @@ with tab_upload:
         document_text = extract_text(uploaded)
         st.success(f"Loaded {len(document_text)} characters from {uploaded.name}")
 
-analyze_clicked = st.button("Analyze document", type="primary", disabled=not document_text.strip())
+analyze_clicked = st.button("Analyze document", type="primary", icon=":material/search:")
 
-if analyze_clicked:
+if analyze_clicked and not document_text.strip():
+    st.warning("Please paste or upload a document first.")
+elif analyze_clicked:
     with st.spinner("Reading the fine print..."):
         try:
             result = analyze_document(document_text)
@@ -158,11 +176,12 @@ if analyze_clicked:
 
     if result:
         score = result.get("overall_risk_score", 0)
-        label, verdict_color = verdict_for_score(score)
+        label, verdict_icon, verdict_color = verdict_for_score(score)
 
         st.markdown(
             f"""<div style="border: 2px solid {verdict_color}; border-radius: 8px; padding: 14px 18px; margin-bottom: 16px; text-align: center;">
-            <span style="font-size: 1.3em; font-weight: 700; color: {verdict_color};">{label}</span>
+            {material_icon(verdict_icon, color=verdict_color, size=28)}
+            <span style="font-size: 1.3em; font-weight: 700; color: {verdict_color};"> {label}</span>
             </div>""",
             unsafe_allow_html=True,
         )
@@ -179,7 +198,12 @@ if analyze_clicked:
             level = clause.get("risk_level", "low")
             color = risk_color(level)
             tip = clause.get("negotiation_tip", "")
-            tip_html = f'<br/><b>💬 Ask for:</b> {tip}' if tip else ""
+            tip_html = (
+                f'<br/>{material_icon("forum", color=color, size=16)} '
+                f'<b>Ask for:</b> {tip}'
+                if tip
+                else ""
+            )
             st.markdown(
                 f"""<div style="border-left: 4px solid {color}; padding: 8px 12px; margin-bottom: 10px; background: rgba(128,128,128,0.06);">
                 <b style="color:{color}; text-transform:uppercase;">{level}</b><br/>
@@ -191,8 +215,9 @@ if analyze_clicked:
             )
 
         st.download_button(
-            "📥 Download full Risk Report",
+            "Download full Risk Report",
             data=build_report_markdown(result),
             file_name="clarityai_risk_report.md",
             mime="text/markdown",
+            icon=":material/download:",
         )
