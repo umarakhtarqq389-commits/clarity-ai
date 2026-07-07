@@ -1,6 +1,6 @@
 # ClarityAI
 
-Plain-language contract and fine-print risk analysis, powered by Google DeepMind's Gemma models via Fireworks AI on AMD infrastructure.
+Plain-language contract and fine-print risk analysis, powered by Fireworks AI on AMD infrastructure.
 
 Built for the **AMD Developer Hackathon: ACT II** — Unicorn Track.
 
@@ -10,7 +10,7 @@ Nobody reads the contract, the lease, the terms of service, or the offer letter 
 
 ## The solution
 
-Paste or upload any document. ClarityAI reads it with Gemma and returns:
+Paste or upload any document. ClarityAI reads it with an LLM served through Fireworks AI and returns:
 
 - An overall risk score (0-100)
 - A plain-language summary of what you're actually agreeing to
@@ -19,7 +19,7 @@ Paste or upload any document. ClarityAI reads it with Gemma and returns:
 ## Tech stack
 
 - **UI + app:** [Streamlit](https://streamlit.io/) (Python)
-- **Model:** Gemma, served via [Fireworks AI](https://fireworks.ai/) on AMD Developer Cloud
+- **Model:** `gpt-oss-120b` served via [Fireworks AI](https://fireworks.ai/) on AMD infrastructure (with a Hugging Face fallback provider for local development)
 - **Packaging:** Docker
 
 ## Setup
@@ -49,5 +49,6 @@ Then open http://localhost:8501
 
 ## Notes
 
-- `FIREWORKS_MODEL` in `.env` defaults to a Gemma model on Fireworks; update it to match whichever Gemma model ID is available on launch day.
+- `FIREWORKS_MODEL` in `.env` defaults to `gpt-oss-120b`; swap in any serverless model available on your Fireworks account.
+- Set `LLM_PROVIDER=huggingface` to use the Hugging Face Inference API instead (see `HF_TOKEN` / `HF_MODEL`).
 - Supports pasted text or `.txt` / `.pdf` upload.

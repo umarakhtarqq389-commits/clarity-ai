@@ -197,7 +197,7 @@ def risk_color(level: str) -> str:
 st.set_page_config(page_title="ClarityAI", page_icon=":material/description:", layout="centered")
 
 st.markdown(f'<h1>{material_icon("description", size=34)} ClarityAI</h1>', unsafe_allow_html=True)
-st.caption("Paste a contract, ToS, lease, or offer letter — get a plain-language risk breakdown, powered by Gemma on Fireworks AI.")
+st.caption("Paste a contract, ToS, lease, or offer letter — get a plain-language risk breakdown, powered by Fireworks AI on AMD infrastructure.")
 
 if LLM_PROVIDER == "huggingface" and not HF_TOKEN:
     st.warning("HF_TOKEN is not set. Add it to your .env file before analyzing a document.")
