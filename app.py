@@ -12,11 +12,11 @@ load_dotenv()
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "fireworks").lower()
 
 FIREWORKS_API_KEY = os.getenv("FIREWORKS_API_KEY", "")
-FIREWORKS_MODEL = os.getenv("FIREWORKS_MODEL", "accounts/fireworks/models/gemma2-9b-it")
+FIREWORKS_MODEL = os.getenv("FIREWORKS_MODEL", "accounts/fireworks/models/gpt-oss-120b")
 FIREWORKS_BASE_URL = "https://api.fireworks.ai/inference/v1"
 
 HF_TOKEN = os.getenv("HF_TOKEN", "")
-HF_MODEL = os.getenv("HF_MODEL", "mistralai/Mistral-7B-Instruct-v0.3")
+HF_MODEL = os.getenv("HF_MODEL", "Qwen/Qwen2.5-7B-Instruct")
 
 SYSTEM_PROMPT = """You are ClarityAI, an assistant that reads contracts, terms of service, \
 leases, and offer letters and explains them in plain language for people with no legal \
@@ -182,6 +182,7 @@ def analyze_document(text: str) -> dict:
             model=FIREWORKS_MODEL,
             messages=messages,
             temperature=0.2,
+            max_tokens=4000,
             response_format={"type": "json_object"},
         )
         content = response.choices[0].message.content
